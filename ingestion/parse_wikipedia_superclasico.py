@@ -204,10 +204,17 @@ def main() -> None:
         for cells in rows:
             if competition_key == "copa_libertadores":
                 num, fecha, fase, ronda, estadio, local, resultado, visitante, goles_l, goles_v = cells
+                # ej. "Primera Fase (R. 1)", "Semifinal (Ida)"
+                fase_col = f"{fase} ({ronda})" if ronda else fase
             elif competition_key == "amistosos":
                 num, fecha, torneo, estadio, local, resultado, visitante, goles_l, goles_v = cells
+                fase_col = ""  # los amistosos no tienen fase/fecha de campeonato
+            elif competition_key == "primera_division":
+                num, fecha, torneo, ronda, estadio, local, resultado, visitante, goles_l, goles_v = cells
+                fase_col = ronda  # acá "ronda" es la fecha del campeonato (ej. "11")
             else:
                 num, fecha, torneo, ronda, estadio, local, resultado, visitante, goles_l, goles_v = cells
+                fase_col = ronda  # acá "ronda" es la fase de copa (ej. "Semifinal")
 
             torneo = TOURNAMENT_OVERRIDE.get(competition_key, torneo)
             home_score, away_score, _nota = parse_score(resultado)
@@ -222,6 +229,7 @@ def main() -> None:
             all_rows.append({
                 "Fecha": parse_date(fecha),
                 "Torneo": torneo,
+                "Fase": fase_col,
                 "Local": local,
                 "Resultado": f"{home_score}-{away_score}" if home_score and away_score else resultado,
                 "Visitante": visitante,
