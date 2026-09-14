@@ -27,7 +27,7 @@ function GanadorBadge({ ganador }: { ganador: Match["ganador"] }) {
   };
   return (
     <span
-      className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold border ${styles[ganador]}`}
+      className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold border whitespace-nowrap ${styles[ganador]}`}
     >
       {ganador === "Empate" ? "Empate" : `Ganó ${ganador}`}
     </span>
@@ -238,7 +238,7 @@ export function HistorialExplorer({ initialSummary, initialMatches, initialTotal
                 <th className="px-3 py-2.5 font-semibold">Partido</th>
                 <th className="px-3 py-2.5 font-semibold">Estadio</th>
                 <th className="px-3 py-2.5 font-semibold">Tipo</th>
-                <th className="px-3 py-2.5 font-semibold">Resultado</th>
+                <th className="px-3 py-2.5 font-semibold text-center w-32">Resultado</th>
               </tr>
             </thead>
             <tbody>
@@ -259,8 +259,8 @@ export function HistorialExplorer({ initialSummary, initialMatches, initialTotal
                   <td className="px-3 py-2.5">
                     <TipoPill tipo={m.tipo} />
                   </td>
-                  <td className="px-3 py-2.5">
-                    <div className="flex flex-col items-start gap-1">
+                  <td className="px-3 py-2.5 w-32">
+                    <div className="flex flex-col items-center gap-1 text-center">
                       <span className="font-bold tabular-nums">{m.resultado}</span>
                       <GanadorBadge ganador={m.ganador} />
                     </div>
