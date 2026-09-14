@@ -1,0 +1,11 @@
+# Registro de rivalidades a ingerir. Los IDs de equipo se buscan una vez
+# con fetch_team_id.py (gasta 1 request de cuota por equipo) y se guardan
+# acá para no volver a pedirlos.
+superclasico:
+  display_name: "Superclásico (River Plate - Boca Juniors)"
+  team_a:
+    name: "River Plate"
+    id: 435
+  team_b:
+    name: "Boca Juniors"
+    id: 451

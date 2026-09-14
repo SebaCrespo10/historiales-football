@@ -1,0 +1,7 @@
+.env
+ingestion/.venv/
+ingestion/__pycache__/
+ingestion/**/__pycache__/
+target/
+dbt_packages/
+logs/
