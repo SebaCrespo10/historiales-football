@@ -2,8 +2,7 @@
 
 Pipeline de datos para páginas de historial partido a partido entre rivales
 de fútbol (clásicos). Arranca con el **Superclásico** (River Plate - Boca
-Juniors) y está pensado para sumar otras rivalidades más adelante sin
-rehacer nada (Superclásico Rosarino, Clásico Platense, etc.).
+Juniors).
 
 Proyecto independiente de [`football-web`](../football-web) (la web general
 de resultados/ligas argentinas). En algún momento esta página de historiales
@@ -12,47 +11,37 @@ propio repo, su propio proyecto de GCP, su propio dataset.
 
 ## Arquitectura
 
-Mismo patrón en capas que football-web:
-
-1. **Data (acá estamos, todavía en local)**: compilar y revisar el historial como CSV.
-2. **GCP**: recién cuando el CSV esté conforme, se carga a BigQuery.
-3. **dbt**: transformar eso en modelos limpios por rivalidad/partido.
-4. **Web**: visualizar el historial partido a partido con features a definir.
+1. **Data (acá estamos)**: historial curado como CSV, cargado tal cual a BigQuery.
+2. **dbt** (después): transformar eso en modelos limpios.
+3. **Web** (después): visualizar el historial partido a partido con features a definir.
 
 ## Infraestructura
 
-- GCP project: `football-web-historiales` (separado del `dbt-training-508204` de football-web). Por ahora solo tiene el dataset `raw_historiales` con la prueba de API-Football (ver abajo) — el historial curado todavía no se cargó.
+- GCP project: `football-web-historiales` (separado del `dbt-training-508204` de football-web).
+- BigQuery dataset: `raw_historiales`, tabla `superclasico_partidos_wikipedia`.
 
-## Fuentes de datos
+## Fuente de datos
 
-El historial partido a partido **no sale de API-Football**: se probó con el
-endpoint `/fixtures/headtohead` y en el plan free solo cubre desde 2015 (26
-de ~390 partidos), muy lejos del historial completo del Superclásico
-(arranca en 1913). En cambio:
+El historial **no sale de una API**: se probó con API-Football
+(`/fixtures/headtohead`) y en el plan free solo cubre partidos desde 2015,
+muy lejos del historial completo del Superclásico (arranca en 1908).
 
-- **Historial completo (curado)**: compilado a partir de la tabla
-  partido-por-partido del artículo de Wikipedia
-  ["Superclásico del fútbol argentino"](https://es.wikipedia.org/wiki/Supercl%C3%A1sico_del_f%C3%BAtbol_argentino).
-  Proceso reproducible en [`ingestion/parse_wikipedia_superclasico.py`](ingestion/parse_wikipedia_superclasico.py):
-  parsea el wikitext (`ingestion/data/wikipedia_superclasico_raw.wikitext`) a
-  un CSV curado (`ingestion/data/superclasico_wikipedia.csv`), validado contra
-  los totales oficiales que el propio artículo reporta por competencia
-  (Primera División, copas nacionales, Copa Libertadores, otras copas
-  internacionales, amistosos). 391 partidos en total, 1908-2026.
-  **Por ahora este CSV es solo local** — se está revisando/ajustando antes
-  de pensar en cargarlo a BigQuery.
-- **API-Football** (mismo proveedor/cuenta que football-web — ver
-  [decisión y comparación de APIs](../football-web/docs/api-football-research.md)):
-  queda solo como fuente complementaria para resultados recientes/en vivo
-  (`fetch_h2h.py` ya aterriza esto en `raw_historiales.api_responses`,
-  endpoint `fixtures_h2h`), no como fuente del historial.
+En cambio, se compiló a partir de la tabla partido-por-partido del artículo
+de Wikipedia
+["Superclásico del fútbol argentino"](https://es.wikipedia.org/wiki/Supercl%C3%A1sico_del_f%C3%BAtbol_argentino),
+validada contra los totales oficiales que el propio artículo reporta por
+competencia. 391 partidos en total, 1908-2026.
 
-## Rivalidades
+## Estructura
 
-Registradas en [`ingestion/config/rivalries.yml`](ingestion/config/rivalries.yml).
-Cada una tiene los IDs de equipo de API-Football (se buscan una vez con
-`fetch_team_id.py` y se guardan, para no gastar cuota de nuevo) — usados solo
-para la fuente complementaria de API-Football, no para el historial curado.
+```
+ingestion/
+  data/
+    wikipedia_superclasico_raw.wikitext   # fuente: wikitext descargado de Wikipedia
+    superclasico_wikipedia.csv            # historial curado (columnas en español, revisable a mano)
+  parse_wikipedia_superclasico.py         # wikitext -> CSV
+  load_superclasico_wikipedia.py          # CSV -> BigQuery (sin transformar)
+```
 
 ## Setup local
 
@@ -61,18 +50,12 @@ cd ingestion
 python -m venv .venv
 source .venv/bin/activate  # o .venv\Scripts\activate en Windows
 pip install -r requirements.txt
-cp .env.example .env  # completar API_FOOTBALL_KEY
+cp .env.example .env  # completar GCP_PROJECT/BQ_RAW_DATASET si difieren
 ```
 
 ## Uso
 
 ```bash
-# Historial completo (curado de Wikipedia) -> CSV local, para revisar
-python parse_wikipedia_superclasico.py
-
-# Complementario: resultados recientes vía API-Football (opcional)
-python fetch_team_id.py "River Plate"
-python fetch_team_id.py "Boca Juniors"
-# completar los IDs encontrados en config/rivalries.yml
-python fetch_h2h.py superclasico
+python parse_wikipedia_superclasico.py     # regenerar el CSV desde el wikitext
+python load_superclasico_wikipedia.py      # cargar el CSV a BigQuery
 ```
