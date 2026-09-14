@@ -5,3 +5,9 @@ ingestion/**/__pycache__/
 target/
 dbt_packages/
 logs/
+
+# web (Next.js)
+web/node_modules/
+web/.next/
+web/.env*.local
+web/gcp-service-account.json

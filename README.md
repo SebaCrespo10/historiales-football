@@ -11,14 +11,15 @@ propio repo, su propio proyecto de GCP, su propio dataset.
 
 ## Arquitectura
 
-1. **Data (acá estamos)**: historial curado como CSV, cargado tal cual a BigQuery.
-2. **dbt** (después): transformar eso en modelos limpios.
-3. **Web** (después): visualizar el historial partido a partido con features a definir.
+1. **Data**: historial curado como CSV, cargado tal cual a BigQuery.
+2. **Web (acá estamos)**: Next.js consultando BigQuery directo — ver [`web/`](web/).
+3. **dbt** (después): transformar eso en modelos limpios, si hace falta antes de escalar la web.
 
 ## Infraestructura
 
 - GCP project: `football-web-historiales` (separado del `dbt-training-508204` de football-web).
 - BigQuery dataset: `raw_historiales`, tabla `superclasico_partidos_wikipedia`.
+- Service account `historiales-web-reader` (solo lectura) para que la web consulte BigQuery — ver [`web/README.md`](web/README.md).
 
 ## Fuente de datos
 
