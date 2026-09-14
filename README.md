@@ -14,14 +14,14 @@ propio repo, su propio proyecto de GCP, su propio dataset.
 
 Mismo patrón en capas que football-web:
 
-1. **Data (acá empezamos)**: historial curado, aterrizado en BigQuery.
-2. **dbt** (después): transformar lo crudo en modelos limpios por rivalidad/partido.
-3. **Web** (después): visualizar el historial partido a partido con features a definir.
+1. **Data (acá estamos, todavía en local)**: compilar y revisar el historial como CSV.
+2. **GCP**: recién cuando el CSV esté conforme, se carga a BigQuery.
+3. **dbt**: transformar eso en modelos limpios por rivalidad/partido.
+4. **Web**: visualizar el historial partido a partido con features a definir.
 
 ## Infraestructura
 
-- GCP project: `football-web-historiales` (separado del `dbt-training-508204` de football-web).
-- BigQuery dataset: `raw_historiales`.
+- GCP project: `football-web-historiales` (separado del `dbt-training-508204` de football-web). Por ahora solo tiene el dataset `raw_historiales` con la prueba de API-Football (ver abajo) — el historial curado todavía no se cargó.
 
 ## Fuentes de datos
 
@@ -39,8 +39,8 @@ de ~390 partidos), muy lejos del historial completo del Superclásico
   los totales oficiales que el propio artículo reporta por competencia
   (Primera División, copas nacionales, Copa Libertadores, otras copas
   internacionales, amistosos). 391 partidos en total, 1908-2026.
-  Se carga a BigQuery con [`ingestion/load_superclasico_wikipedia.py`](ingestion/load_superclasico_wikipedia.py)
-  → tabla `raw_historiales.superclasico_partidos_wikipedia`.
+  **Por ahora este CSV es solo local** — se está revisando/ajustando antes
+  de pensar en cargarlo a BigQuery.
 - **API-Football** (mismo proveedor/cuenta que football-web — ver
   [decisión y comparación de APIs](../football-web/docs/api-football-research.md)):
   queda solo como fuente complementaria para resultados recientes/en vivo
@@ -67,9 +67,8 @@ cp .env.example .env  # completar API_FOOTBALL_KEY
 ## Uso
 
 ```bash
-# Historial completo (curado de Wikipedia) -> CSV -> BigQuery
+# Historial completo (curado de Wikipedia) -> CSV local, para revisar
 python parse_wikipedia_superclasico.py
-python load_superclasico_wikipedia.py
 
 # Complementario: resultados recientes vía API-Football (opcional)
 python fetch_team_id.py "River Plate"

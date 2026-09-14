@@ -1,13 +1,11 @@
 """Compila el historial completo de Superclásicos a partir del wikitext del
 artículo de Wikipedia "Superclásico del fútbol argentino".
 
-No es parte del pipeline recurrente: es un script de compilación que se
-corre una vez (o cuando Wikipedia actualice la tabla) para generar el CSV
-curado en data/superclasico_wikipedia.csv. Ese CSV es la fuente de datos
-del historial (no la API), y se carga aparte a BigQuery.
+Genera un CSV local de trabajo (data/superclasico_wikipedia.csv) para
+revisar y ajustar antes de pensar en cargarlo a ningún lado. Todavía no
+toca BigQuery ni GCP.
 
 Uso:
-    python fetch_wikipedia_source.py           # descarga el wikitext más reciente
     python parse_wikipedia_superclasico.py     # parsea el wikitext ya descargado
 """
 
@@ -179,6 +177,17 @@ def parse_score(resultado: str) -> tuple[str, str, str]:
     return home, away, nota
 
 
+RIVER = "River Plate"
+BOCA = "Boca Juniors"
+
+# Nombre de torneo a usar para toda la sección de Copa Libertadores: en el
+# wikitext esa columna trae la fase (Semifinal, Octavos, etc.), no el nombre
+# del torneo, así que la pisamos acá.
+TOURNAMENT_OVERRIDE = {
+    "copa_libertadores": "Copa Libertadores de América",
+}
+
+
 def main() -> None:
     with open(WIKITEXT_PATH, encoding="utf-8") as f:
         text = f.read()
@@ -195,31 +204,33 @@ def main() -> None:
         for cells in rows:
             if competition_key == "copa_libertadores":
                 num, fecha, fase, ronda, estadio, local, resultado, visitante, goles_l, goles_v = cells
-                torneo = fase
             elif competition_key == "amistosos":
                 num, fecha, torneo, estadio, local, resultado, visitante, goles_l, goles_v = cells
-                ronda = ""
             else:
                 num, fecha, torneo, ronda, estadio, local, resultado, visitante, goles_l, goles_v = cells
 
-            home_score, away_score, nota = parse_score(resultado)
+            torneo = TOURNAMENT_OVERRIDE.get(competition_key, torneo)
+            home_score, away_score, _nota = parse_score(resultado)
+
+            if local == RIVER:
+                goles_river, goles_boca = home_score, away_score
+            elif local == BOCA:
+                goles_boca, goles_river = home_score, away_score
+            else:
+                raise ValueError(f"Local inesperado (ni River ni Boca): {local!r} en fila {cells}")
 
             all_rows.append({
-                "competition_section": competition_key,
-                "match_number": num,
-                "match_date": parse_date(fecha),
-                "date_raw": fecha,
-                "tournament": torneo,
-                "round": ronda,
-                "stadium": estadio,
-                "home_team": local,
-                "away_team": visitante,
-                "home_score": home_score,
-                "away_score": away_score,
-                "score_note": nota,
-                "home_scorers": goles_l,
-                "away_scorers": goles_v,
+                "Fecha": parse_date(fecha),
+                "Torneo": torneo,
+                "Local": local,
+                "Resultado": f"{home_score}-{away_score}" if home_score and away_score else resultado,
+                "Visitante": visitante,
+                "Goles River": goles_river,
+                "Goles Boca": goles_boca,
+                "Estadio": estadio,
             })
+
+    all_rows.sort(key=lambda r: r["Fecha"])
 
     os.makedirs(os.path.dirname(OUTPUT_CSV_PATH), exist_ok=True)
     with open(OUTPUT_CSV_PATH, "w", newline="", encoding="utf-8") as f:
