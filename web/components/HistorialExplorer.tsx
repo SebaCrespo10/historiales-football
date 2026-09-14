@@ -1,17 +1,33 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import type { Match, Summary } from "@/lib/data";
 import { SummaryHero } from "./SummaryHero";
 
 const PAGE_SIZE = 10;
+const DEBOUNCE_MS = 350;
 
 const TIPOS = ["Torneo Local", "Copa Local", "Copa Internacional", "Amistoso"];
-const GANADORES: { value: string; label: string }[] = [
-  { value: "River", label: "Ganó River" },
-  { value: "Boca", label: "Ganó Boca" },
-  { value: "Empate", label: "Empate" },
-];
+
+type Filters = {
+  fecha: string;
+  torneo: string;
+  fase: string;
+  local: string;
+  estadio: string;
+  tipo: string;
+  ganador: string;
+};
+
+const EMPTY_FILTERS: Filters = {
+  fecha: "",
+  torneo: "",
+  fase: "",
+  local: "",
+  estadio: "",
+  tipo: "",
+  ganador: "",
+};
 
 type Props = {
   initialSummary: Summary;
@@ -42,75 +58,74 @@ function TipoPill({ tipo }: { tipo: string }) {
   );
 }
 
-function ToggleGroup({
-  options,
-  selected,
-  onToggle,
-  onClear,
+const inputClass =
+  "w-full min-w-0 px-2 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-normal text-negro placeholder:text-gray-400 focus:outline-none focus:border-celeste focus:ring-2 focus:ring-celeste/30";
+
+function ColumnTextFilter({
+  value,
+  onChange,
+  placeholder,
 }: {
-  options: { value: string; label: string }[];
-  selected: string[];
-  onToggle: (value: string) => void;
-  onClear: () => void;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
 }) {
-  const isAll = selected.length === 0;
   return (
-    <div className="flex flex-wrap gap-2">
-      <button
-        onClick={onClear}
-        className={`px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
-          isAll
-            ? "bg-negro text-white border-negro"
-            : "bg-white text-negro border-gray-300 hover:border-negro"
-        }`}
-      >
-        Todas
-      </button>
-      {options.map((opt) => {
-        const active = selected.includes(opt.value);
-        return (
-          <button
-            key={opt.value}
-            onClick={() => onToggle(opt.value)}
-            className={`px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
-              active
-                ? "bg-celeste text-white border-celeste"
-                : "bg-white text-negro border-gray-300 hover:border-celeste"
-            }`}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
-    </div>
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className={inputClass}
+    />
   );
 }
 
-function summaryCaption(tipos: string[]): string | undefined {
-  if (tipos.length === 0) return "no incluye amistosos";
-  if (tipos.length === TIPOS.length) return undefined;
-  return `solo ${tipos.join(" + ")}`;
+function ColumnSelectFilter({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className={inputClass}>
+      <option value="">Todos</option>
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function summaryCaption(tipo: string): string | undefined {
+  if (!tipo) return "no incluye amistosos";
+  return `solo ${tipo}`;
 }
 
 export function HistorialExplorer({ initialSummary, initialMatches, initialTotal }: Props) {
   const [summary, setSummary] = useState<Summary>(initialSummary);
   const [matches, setMatches] = useState<Match[]>(initialMatches);
   const [total, setTotal] = useState(initialTotal);
-  const [tipos, setTipos] = useState<string[]>([]);
-  const [ganadores, setGanadores] = useState<string[]>([]);
-  const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [isPending, startTransition] = useTransition();
+  const isFirstRun = useRef(true);
 
-  const buildParams = useCallback(
-    (nextTipos: string[], nextGanadores: string[], nextSearch: string) => {
-      const params = new URLSearchParams();
-      nextTipos.forEach((t) => params.append("tipo", t));
-      nextGanadores.forEach((g) => params.append("ganador", g));
-      if (nextSearch.trim()) params.set("q", nextSearch.trim());
-      return params;
-    },
-    []
-  );
+  const setFilter = (key: keyof Filters, value: string) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const buildParams = useCallback((f: Filters) => {
+    const params = new URLSearchParams();
+    (Object.keys(f) as (keyof Filters)[]).forEach((key) => {
+      if (f[key]) params.set(key, f[key]);
+    });
+    return params;
+  }, []);
 
   const fetchJson = useCallback(async (url: string) => {
     const res = await fetch(url);
@@ -119,8 +134,8 @@ export function HistorialExplorer({ initialSummary, initialMatches, initialTotal
   }, []);
 
   const fetchMatches = useCallback(
-    (nextTipos: string[], nextGanadores: string[], nextSearch: string, offset: number) => {
-      const params = buildParams(nextTipos, nextGanadores, nextSearch);
+    (f: Filters, offset: number) => {
+      const params = buildParams(f);
       params.set("limit", String(PAGE_SIZE));
       params.set("offset", String(offset));
       return fetchJson(`/api/matches?${params.toString()}`);
@@ -129,21 +144,22 @@ export function HistorialExplorer({ initialSummary, initialMatches, initialTotal
   );
 
   const fetchSummary = useCallback(
-    (nextTipos: string[], nextGanadores: string[], nextSearch: string) => {
-      const params = buildParams(nextTipos, nextGanadores, nextSearch);
-      return fetchJson(`/api/summary?${params.toString()}`);
-    },
+    (f: Filters) => fetchJson(`/api/summary?${buildParams(f).toString()}`),
     [buildParams, fetchJson]
   );
 
-  // los filtros afectan tanto la tabla como el resumen general del encabezado
-  const applyFilters = useCallback(
-    (nextTipos: string[], nextGanadores: string[], nextSearch: string) => {
+  // los filtros por columna afectan tanto la tabla como el resumen del encabezado
+  useEffect(() => {
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+    const handle = setTimeout(() => {
       startTransition(async () => {
         try {
           const [matchesData, summaryData] = await Promise.all([
-            fetchMatches(nextTipos, nextGanadores, nextSearch, 0),
-            fetchSummary(nextTipos, nextGanadores, nextSearch),
+            fetchMatches(filters, 0),
+            fetchSummary(filters),
           ]);
           setMatches(matchesData.matches);
           setTotal(matchesData.total);
@@ -152,33 +168,16 @@ export function HistorialExplorer({ initialSummary, initialMatches, initialTotal
           // se mantiene el estado anterior si falla la consulta
         }
       });
-    },
-    [fetchMatches, fetchSummary]
-  );
+    }, DEBOUNCE_MS);
 
-  const toggleTipo = (value: string) => {
-    const next = tipos.includes(value) ? tipos.filter((t) => t !== value) : [...tipos, value];
-    setTipos(next);
-    applyFilters(next, ganadores, search);
-  };
-
-  const toggleGanador = (value: string) => {
-    const next = ganadores.includes(value)
-      ? ganadores.filter((g) => g !== value)
-      : [...ganadores, value];
-    setGanadores(next);
-    applyFilters(tipos, next, search);
-  };
-
-  const handleSearchChange = (value: string) => {
-    setSearch(value);
-    applyFilters(tipos, ganadores, value);
-  };
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]);
 
   const loadMore = () => {
     startTransition(async () => {
       try {
-        const data = await fetchMatches(tipos, ganadores, search, matches.length);
+        const data = await fetchMatches(filters, matches.length);
         setMatches((prev) => [...prev, ...data.matches]);
         setTotal(data.total);
       } catch {
@@ -188,57 +187,96 @@ export function HistorialExplorer({ initialSummary, initialMatches, initialTotal
   };
 
   const hasMore = matches.length < total;
+  const hasActiveFilters = Object.values(filters).some((v) => v !== "");
 
   return (
     <>
-      <SummaryHero summary={summary} caption={summaryCaption(tipos)} />
+      <SummaryHero summary={summary} caption={summaryCaption(filters.tipo)} />
 
-      <section className="max-w-5xl mx-auto px-4 sm:px-8 py-10 sm:py-14 flex flex-col gap-6">
-        <div className="flex flex-col gap-4">
+      <section className="max-w-6xl mx-auto px-4 sm:px-8 py-10 sm:py-14 flex flex-col gap-6">
+        <div className="flex items-center justify-between gap-4">
           <h2 className="text-xl sm:text-2xl font-black text-negro">
             Partido por partido
           </h2>
-
-          <div className="flex flex-col gap-3">
-            <ToggleGroup
-              options={TIPOS.map((t) => ({ value: t, label: t }))}
-              selected={tipos}
-              onToggle={toggleTipo}
-              onClear={() => {
-                setTipos([]);
-                applyFilters([], ganadores, search);
-              }}
-            />
-            <ToggleGroup
-              options={GANADORES}
-              selected={ganadores}
-              onToggle={toggleGanador}
-              onClear={() => {
-                setGanadores([]);
-                applyFilters(tipos, [], search);
-              }}
-            />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Buscar por torneo o estadio..."
-              className="w-full sm:max-w-sm px-3.5 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:border-celeste focus:ring-2 focus:ring-celeste/30"
-            />
-          </div>
+          {hasActiveFilters && (
+            <button
+              onClick={() => setFilters(EMPTY_FILTERS)}
+              className="text-sm font-semibold text-celeste-dark hover:underline whitespace-nowrap"
+            >
+              Limpiar filtros
+            </button>
+          )}
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-gray-200">
-          <table className="w-full text-sm min-w-[720px]">
+          <table className="w-full text-sm min-w-[820px]">
             <thead>
               <tr className="bg-negro text-white text-left">
-                <th className="px-3 py-2.5 font-semibold">Fecha</th>
-                <th className="px-3 py-2.5 font-semibold">Torneo</th>
-                <th className="px-3 py-2.5 font-semibold">Fase</th>
-                <th className="px-3 py-2.5 font-semibold">Partido</th>
-                <th className="px-3 py-2.5 font-semibold">Estadio</th>
-                <th className="px-3 py-2.5 font-semibold">Tipo</th>
-                <th className="px-3 py-2.5 font-semibold text-center w-32">Resultado</th>
+                <th className="px-3 pt-2.5 font-semibold">Fecha</th>
+                <th className="px-3 pt-2.5 font-semibold">Torneo</th>
+                <th className="px-3 pt-2.5 font-semibold">Fase</th>
+                <th className="px-3 pt-2.5 font-semibold">Partido</th>
+                <th className="px-3 pt-2.5 font-semibold">Estadio</th>
+                <th className="px-3 pt-2.5 font-semibold">Tipo</th>
+                <th className="px-3 pt-2.5 font-semibold text-center w-32">Resultado</th>
+              </tr>
+              <tr className="bg-negro">
+                <th className="px-3 pb-2.5">
+                  <ColumnTextFilter
+                    value={filters.fecha}
+                    onChange={(v) => setFilter("fecha", v)}
+                    placeholder="ej. 2024"
+                  />
+                </th>
+                <th className="px-3 pb-2.5">
+                  <ColumnTextFilter
+                    value={filters.torneo}
+                    onChange={(v) => setFilter("torneo", v)}
+                    placeholder="Buscar..."
+                  />
+                </th>
+                <th className="px-3 pb-2.5">
+                  <ColumnTextFilter
+                    value={filters.fase}
+                    onChange={(v) => setFilter("fase", v)}
+                    placeholder="Buscar..."
+                  />
+                </th>
+                <th className="px-3 pb-2.5">
+                  <ColumnSelectFilter
+                    value={filters.local}
+                    onChange={(v) => setFilter("local", v)}
+                    options={[
+                      { value: "River Plate", label: "River de local" },
+                      { value: "Boca Juniors", label: "Boca de local" },
+                    ]}
+                  />
+                </th>
+                <th className="px-3 pb-2.5">
+                  <ColumnTextFilter
+                    value={filters.estadio}
+                    onChange={(v) => setFilter("estadio", v)}
+                    placeholder="Buscar..."
+                  />
+                </th>
+                <th className="px-3 pb-2.5">
+                  <ColumnSelectFilter
+                    value={filters.tipo}
+                    onChange={(v) => setFilter("tipo", v)}
+                    options={TIPOS.map((t) => ({ value: t, label: t }))}
+                  />
+                </th>
+                <th className="px-3 pb-2.5 w-32">
+                  <ColumnSelectFilter
+                    value={filters.ganador}
+                    onChange={(v) => setFilter("ganador", v)}
+                    options={[
+                      { value: "River", label: "Ganó River" },
+                      { value: "Boca", label: "Ganó Boca" },
+                      { value: "Empate", label: "Empate" },
+                    ]}
+                  />
+                </th>
               </tr>
             </thead>
             <tbody>

@@ -4,14 +4,28 @@ import { getMatches } from "@/lib/data";
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
 
-  const tipos = params.getAll("tipo");
-  const ganadores = params.getAll("ganador");
-  const search = params.get("q") ?? undefined;
+  const fecha = params.get("fecha") ?? undefined;
+  const torneo = params.get("torneo") ?? undefined;
+  const fase = params.get("fase") ?? undefined;
+  const local = params.get("local") ?? undefined;
+  const estadio = params.get("estadio") ?? undefined;
+  const tipo = params.get("tipo") ?? undefined;
+  const ganador = params.get("ganador") ?? undefined;
   const limit = Number(params.get("limit") ?? "10");
   const offset = Number(params.get("offset") ?? "0");
 
   try {
-    const result = await getMatches({ tipos, ganadores, search, limit, offset });
+    const result = await getMatches({
+      fecha,
+      torneo,
+      fase,
+      local,
+      estadio,
+      tipo,
+      ganador,
+      limit,
+      offset,
+    });
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error consultando BigQuery:", error);

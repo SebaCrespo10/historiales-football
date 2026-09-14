@@ -24,9 +24,13 @@ export type Summary = {
 };
 
 export type MatchFilters = {
-  tipos?: string[];
-  ganadores?: string[];
-  search?: string;
+  fecha?: string;
+  torneo?: string;
+  fase?: string;
+  local?: string;
+  estadio?: string;
+  tipo?: string;
+  ganador?: string;
   limit?: number;
   offset?: number;
 };
@@ -54,25 +58,35 @@ function buildWhere(
 ) {
   const clauses: string[] = [];
   const params: Record<string, unknown> = {};
-  const types: Record<string, string | string[]> = {};
+  const types: Record<string, string> = {};
 
-  if (filters.tipos && filters.tipos.length > 0) {
-    clauses.push("tipo IN UNNEST(@tipos)");
-    params.tipos = filters.tipos;
-    types.tipos = ["STRING"];
+  const like = (column: string, key: string, value?: string) => {
+    if (value && value.trim() !== "") {
+      clauses.push(`LOWER(${column}) LIKE @${key}`);
+      params[key] = `%${value.trim().toLowerCase()}%`;
+      types[key] = "STRING";
+    }
+  };
+  const equals = (column: string, key: string, value?: string) => {
+    if (value && value.trim() !== "") {
+      clauses.push(`${column} = @${key}`);
+      params[key] = value;
+      types[key] = "STRING";
+    }
+  };
+
+  like("fecha", "fecha", filters.fecha);
+  like("torneo", "torneo", filters.torneo);
+  like("fase", "fase", filters.fase);
+  like("estadio", "estadio", filters.estadio);
+  equals("local", "local", filters.local);
+  equals("ganador", "ganador", filters.ganador);
+
+  if (filters.tipo && filters.tipo.trim() !== "") {
+    equals("tipo", "tipo", filters.tipo);
   } else if (opts.excludeAmistosoByDefault) {
     // sin un filtro de tipo explícito, el "historial general" no cuenta amistosos
     clauses.push("tipo != 'Amistoso'");
-  }
-  if (filters.ganadores && filters.ganadores.length > 0) {
-    clauses.push("ganador IN UNNEST(@ganadores)");
-    params.ganadores = filters.ganadores;
-    types.ganadores = ["STRING"];
-  }
-  if (filters.search && filters.search.trim() !== "") {
-    clauses.push("(LOWER(torneo) LIKE @search OR LOWER(estadio) LIKE @search)");
-    params.search = `%${filters.search.trim().toLowerCase()}%`;
-    types.search = "STRING";
   }
 
   const where = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : "";
@@ -141,23 +155,5 @@ export async function getSummary(filters: MatchFilters = {}): Promise<Summary> {
     empates: Number(row.empates),
     golesRiver: Number(row.golesRiver),
     golesBoca: Number(row.golesBoca),
-  };
-}
-
-export async function getFilterOptions(): Promise<{
-  tipos: string[];
-  ganadores: string[];
-}> {
-  const bigquery = getBigQueryClient();
-  const [tipoRows] = await bigquery.query({
-    query: `SELECT DISTINCT tipo FROM ${FULL_TABLE} ORDER BY tipo`,
-  });
-  const [ganadorRows] = await bigquery.query({
-    query: `SELECT DISTINCT ganador FROM ${FULL_TABLE} ORDER BY ganador`,
-  });
-
-  return {
-    tipos: tipoRows.map((r: { tipo: string }) => r.tipo),
-    ganadores: ganadorRows.map((r: { ganador: string }) => r.ganador),
   };
 }
