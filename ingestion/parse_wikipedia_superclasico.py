@@ -233,6 +233,8 @@ def main() -> None:
             else:
                 ganador = "Empate"
 
+            caracter = "Amistoso" if competition_key == "amistosos" else "Oficial"
+
             all_rows.append({
                 "Fecha": parse_date(fecha),
                 "Torneo": torneo,
@@ -244,6 +246,7 @@ def main() -> None:
                 "Goles Boca": goles_boca,
                 "Estadio": estadio,
                 "Ganador": ganador,
+                "Carácter": caracter,
             })
 
     all_rows.sort(key=lambda r: r["Fecha"])
