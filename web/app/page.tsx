@@ -1,5 +1,4 @@
 import { getMatches, getSummary } from "@/lib/data";
-import { SummaryHero } from "@/components/SummaryHero";
 import { HistorialExplorer } from "@/components/HistorialExplorer";
 
 export const dynamic = "force-dynamic";
@@ -18,8 +17,11 @@ export default async function Home() {
         <div className="flex-1 bg-celeste" />
       </div>
 
-      <SummaryHero summary={summary} />
-      <HistorialExplorer initialMatches={matches} initialTotal={total} />
+      <HistorialExplorer
+        initialSummary={summary}
+        initialMatches={matches}
+        initialTotal={total}
+      />
 
       <footer className="border-t border-gray-100 py-6 text-center text-xs text-gray-400">
         Historial compilado de Wikipedia · football-web-historiales

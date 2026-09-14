@@ -48,7 +48,10 @@ function normalizeRow(row: Record<string, unknown>): Match {
   };
 }
 
-function buildWhere(filters: MatchFilters) {
+function buildWhere(
+  filters: MatchFilters,
+  opts: { excludeAmistosoByDefault?: boolean } = {}
+) {
   const clauses: string[] = [];
   const params: Record<string, unknown> = {};
   const types: Record<string, string | string[]> = {};
@@ -57,6 +60,9 @@ function buildWhere(filters: MatchFilters) {
     clauses.push("tipo IN UNNEST(@tipos)");
     params.tipos = filters.tipos;
     types.tipos = ["STRING"];
+  } else if (opts.excludeAmistosoByDefault) {
+    // sin un filtro de tipo explícito, el "historial general" no cuenta amistosos
+    clauses.push("tipo != 'Amistoso'");
   }
   if (filters.ganadores && filters.ganadores.length > 0) {
     clauses.push("ganador IN UNNEST(@ganadores)");
@@ -105,8 +111,12 @@ export async function getMatches(
   };
 }
 
-export async function getSummary(): Promise<Summary> {
+export async function getSummary(filters: MatchFilters = {}): Promise<Summary> {
   const bigquery = getBigQueryClient();
+  const { where, params, types } = buildWhere(filters, {
+    excludeAmistosoByDefault: true,
+  });
+
   const [rows] = await bigquery.query({
     query: `
       SELECT
@@ -117,8 +127,10 @@ export async function getSummary(): Promise<Summary> {
         SUM(goles_river) AS golesRiver,
         SUM(goles_boca) AS golesBoca
       FROM ${FULL_TABLE}
-      WHERE tipo != 'Amistoso'
+      ${where}
     `,
+    params,
+    types,
   });
 
   const row = rows[0];
