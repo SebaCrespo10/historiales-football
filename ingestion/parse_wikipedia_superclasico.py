@@ -226,6 +226,13 @@ def main() -> None:
             else:
                 raise ValueError(f"Local inesperado (ni River ni Boca): {local!r} en fila {cells}")
 
+            if int(goles_river) > int(goles_boca):
+                ganador = "River"
+            elif int(goles_boca) > int(goles_river):
+                ganador = "Boca"
+            else:
+                ganador = "Empate"
+
             all_rows.append({
                 "Fecha": parse_date(fecha),
                 "Torneo": torneo,
@@ -236,6 +243,7 @@ def main() -> None:
                 "Goles River": goles_river,
                 "Goles Boca": goles_boca,
                 "Estadio": estadio,
+                "Ganador": ganador,
             })
 
     all_rows.sort(key=lambda r: r["Fecha"])
