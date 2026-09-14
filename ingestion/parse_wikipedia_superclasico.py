@@ -187,6 +187,14 @@ TOURNAMENT_OVERRIDE = {
     "copa_libertadores": "Copa Libertadores de América",
 }
 
+TIPO_POR_SECCION = {
+    "primera_division": "Torneo Local",
+    "copas_nacionales": "Copa Local",
+    "copa_libertadores": "Copa Internacional",
+    "otras_copas_internacionales": "Copa Internacional",
+    "amistosos": "Amistoso",
+}
+
 
 def main() -> None:
     with open(WIKITEXT_PATH, encoding="utf-8") as f:
@@ -233,7 +241,7 @@ def main() -> None:
             else:
                 ganador = "Empate"
 
-            caracter = "Amistoso" if competition_key == "amistosos" else "Oficial"
+            tipo = TIPO_POR_SECCION[competition_key]
 
             all_rows.append({
                 "Fecha": parse_date(fecha),
@@ -246,7 +254,7 @@ def main() -> None:
                 "Goles Boca": goles_boca,
                 "Estadio": estadio,
                 "Ganador": ganador,
-                "Carácter": caracter,
+                "Tipo": tipo,
             })
 
     all_rows.sort(key=lambda r: r["Fecha"])
