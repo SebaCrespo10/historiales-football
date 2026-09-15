@@ -261,6 +261,22 @@ export function HistorialExplorer({
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [isPending, startTransition] = useTransition();
   const isFirstRun = useRef(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollArrows = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    updateScrollArrows();
+    window.addEventListener("resize", updateScrollArrows);
+    return () => window.removeEventListener("resize", updateScrollArrows);
+  }, [updateScrollArrows, matches]);
 
   const setFilter = <K extends keyof Filters>(key: K, value: Filters[K]) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -379,11 +395,16 @@ export function HistorialExplorer({
           )}
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-gray-200">
+        <div className="relative">
+          <div
+            ref={scrollRef}
+            onScroll={updateScrollArrows}
+            className="overflow-x-auto rounded-xl border border-gray-200"
+          >
           <table className="w-full text-sm min-w-[960px]">
             <thead>
               <tr className="bg-negro text-white text-left">
-                <th className="px-3 pt-2.5 font-semibold">Fecha</th>
+                <th className="sticky left-0 z-10 bg-negro px-3 pt-2.5 font-semibold">Fecha</th>
                 <th className="px-3 pt-2.5 font-semibold w-28">Tipo</th>
                 <th className="px-3 pt-2.5 font-semibold text-center w-32">Resultado</th>
                 <th className="px-3 pt-2.5 font-semibold">Torneo</th>
@@ -392,7 +413,7 @@ export function HistorialExplorer({
                 <th className="px-3 pt-2.5 font-semibold">Fase</th>
               </tr>
               <tr className="bg-negro">
-                <th className="px-3 pb-2.5 align-top">
+                <th className="sticky left-0 z-10 bg-negro px-3 pb-2.5 align-top">
                   <ColumnDateRangeFilter
                     desde={filters.fechaDesde}
                     hasta={filters.fechaHasta}
@@ -457,7 +478,11 @@ export function HistorialExplorer({
                   key={`${m.fecha}-${i}`}
                   className="border-t border-gray-100 even:bg-gray-50/60 hover:bg-celeste-light/60 transition-colors"
                 >
-                  <td className="px-3 py-2.5 whitespace-nowrap text-gray-600">
+                  <td
+                    className={`sticky left-0 z-10 px-3 py-2.5 whitespace-nowrap text-gray-600 ${
+                      i % 2 === 1 ? "bg-gray-50" : "bg-white"
+                    }`}
+                  >
                     {m.fecha}
                   </td>
                   <td className="px-3 py-2.5 w-28">
@@ -486,6 +511,31 @@ export function HistorialExplorer({
               )}
             </tbody>
           </table>
+          </div>
+          {canScrollLeft && (
+            <button
+              type="button"
+              aria-label="Ver columnas anteriores"
+              onClick={() => scrollRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
+              className="absolute left-1 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 rounded-full bg-negro/75 text-white"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 6l-6 6l6 6" />
+              </svg>
+            </button>
+          )}
+          {canScrollRight && (
+            <button
+              type="button"
+              aria-label="Ver más columnas"
+              onClick={() => scrollRef.current?.scrollBy({ left: 160, behavior: "smooth" })}
+              className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 rounded-full bg-negro/75 text-white"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 6l6 6l-6 6" />
+              </svg>
+            </button>
+          )}
         </div>
 
         <div className="flex flex-col items-center gap-2">
