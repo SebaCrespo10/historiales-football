@@ -142,9 +142,7 @@ function DateOnlyPicker({
         aria-label={label}
         className="peer absolute inset-0 h-full w-full opacity-0"
       />
-      <div
-        className={`${inputClass} pointer-events-none peer-focus:ring-2 peer-focus:ring-celeste peer-focus:border-celeste`}
-      >
+      <div className="w-full min-w-0 px-1 py-1.5 rounded-md border border-gray-300 bg-white text-[10px] whitespace-nowrap overflow-hidden font-normal pointer-events-none peer-focus:ring-2 peer-focus:ring-celeste peer-focus:border-celeste">
         <span className={value ? "text-negro" : "text-gray-400"}>
           {value ? formatDate(value) : label}
         </span>
