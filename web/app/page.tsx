@@ -1,13 +1,14 @@
-import { getFaseOptions, getMatches, getSummary } from "@/lib/data";
+import { getFaseOptions, getLeadEvolution, getMatches, getSummary } from "@/lib/data";
 import { HistorialExplorer } from "@/components/HistorialExplorer";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [summary, { matches, total }, faseOptions] = await Promise.all([
+  const [summary, { matches, total }, faseOptions, leadEvolution] = await Promise.all([
     getSummary(),
     getMatches({ limit: 10, offset: 0 }),
     getFaseOptions(),
+    getLeadEvolution(),
   ]);
 
   return (
@@ -22,6 +23,7 @@ export default async function Home() {
         initialSummary={summary}
         initialMatches={matches}
         initialTotal={total}
+        initialLeadEvolution={leadEvolution}
         faseOptions={faseOptions}
       />
 
