@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import type { Match, Summary } from "@/lib/data";
+import type { LeadPoint, Match, Summary } from "@/lib/data";
 import { SummaryHero } from "./SummaryHero";
 
 const PAGE_SIZE = 10;
@@ -35,6 +35,7 @@ type Props = {
   initialSummary: Summary;
   initialMatches: Match[];
   initialTotal: number;
+  initialLeadEvolution: LeadPoint[];
   faseOptions: string[];
 };
 
@@ -269,11 +270,13 @@ export function HistorialExplorer({
   initialSummary,
   initialMatches,
   initialTotal,
+  initialLeadEvolution,
   faseOptions,
 }: Props) {
   const [summary, setSummary] = useState<Summary>(initialSummary);
   const [matches, setMatches] = useState<Match[]>(initialMatches);
   const [total, setTotal] = useState(initialTotal);
+  const [leadEvolution, setLeadEvolution] = useState<LeadPoint[]>(initialLeadEvolution);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [isPending, startTransition] = useTransition();
   const isFirstRun = useRef(true);
@@ -316,6 +319,11 @@ export function HistorialExplorer({
     [buildParams, fetchJson]
   );
 
+  const fetchLeadEvolution = useCallback(
+    (f: Filters) => fetchJson(`/api/lead-evolution?${buildParams(f).toString()}`),
+    [buildParams, fetchJson]
+  );
+
   // los filtros por columna afectan tanto la tabla como el resumen del encabezado
   useEffect(() => {
     if (isFirstRun.current) {
@@ -325,13 +333,15 @@ export function HistorialExplorer({
     const handle = setTimeout(() => {
       startTransition(async () => {
         try {
-          const [matchesData, summaryData] = await Promise.all([
+          const [matchesData, summaryData, leadEvolutionData] = await Promise.all([
             fetchMatches(filters, 0),
             fetchSummary(filters),
+            fetchLeadEvolution(filters),
           ]);
           setMatches(matchesData.matches);
           setTotal(matchesData.total);
           setSummary(summaryData);
+          setLeadEvolution(leadEvolutionData);
         } catch {
           // se mantiene el estado anterior si falla la consulta
         }
@@ -367,7 +377,11 @@ export function HistorialExplorer({
 
   return (
     <>
-      <SummaryHero summary={summary} caption={summaryCaption(filters.tipo)} />
+      <SummaryHero
+        summary={summary}
+        caption={summaryCaption(filters.tipo)}
+        leadEvolution={leadEvolution}
+      />
 
       <section className="max-w-6xl mx-auto px-4 sm:px-8 py-10 sm:py-14 flex flex-col gap-6">
         <div className="flex items-center justify-between gap-4">
