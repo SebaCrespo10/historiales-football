@@ -112,9 +112,11 @@ function formatDate(value: string): string {
   return `${day}/${month}/${year}`;
 }
 
-// botón que solo dispara el calendario nativo (showPicker): el input real
-// queda oculto para que no se pueda escribir la fecha a mano ni se vea el
-// placeholder dd/mm/aaaa del navegador.
+// el input real de tipo date queda invisible pero ES el que recibe el toque/
+// click (ocupa todo el botón) -- así se abre de forma nativa y confiable
+// tanto en desktop como en mobile. Debajo se ve solo el diseño propio
+// (Desde/Hasta o la fecha elegida), nunca el placeholder dd/mm/aaaa del
+// navegador. onKeyDown evita que se pueda escribir la fecha a mano.
 function DateOnlyPicker({
   value,
   onChange,
@@ -128,41 +130,25 @@ function DateOnlyPicker({
   min?: string;
   max?: string;
 }) {
-  const ref = useRef<HTMLInputElement>(null);
-
-  const openPicker = () => {
-    const input = ref.current;
-    if (!input) return;
-    if (typeof input.showPicker === "function") {
-      input.showPicker();
-    } else {
-      input.focus();
-    }
-  };
-
   return (
     <div className="relative">
-      <button
-        type="button"
-        onClick={openPicker}
-        className={`${inputClass} text-left`}
-      >
-        <span className={value ? "text-negro" : "text-gray-400"}>
-          {value ? formatDate(value) : label}
-        </span>
-      </button>
       <input
-        ref={ref}
         type="date"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         min={min || undefined}
         max={max || undefined}
         onKeyDown={(e) => e.preventDefault()}
-        tabIndex={-1}
         aria-label={label}
-        className="absolute inset-0 h-full w-full opacity-0 pointer-events-none"
+        className="peer absolute inset-0 h-full w-full opacity-0"
       />
+      <div
+        className={`${inputClass} pointer-events-none peer-focus:ring-2 peer-focus:ring-celeste peer-focus:border-celeste`}
+      >
+        <span className={value ? "text-negro" : "text-gray-400"}>
+          {value ? formatDate(value) : label}
+        </span>
+      </div>
     </div>
   );
 }
