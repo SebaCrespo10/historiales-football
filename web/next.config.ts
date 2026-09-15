@@ -7,6 +7,12 @@ const nextConfig: NextConfig = {
   // recursos de dev (JS de hidratación) y los componentes interactivos
   // como el gráfico de evolución no llegan a funcionar.
   allowedDevOrigins: ["192.168.1.101"],
+  // next/image sirve automáticamente AVIF/WebP cuando el navegador lo
+  // soporta, sin tocar cómo se ven los escudos (siguen siendo los mismos
+  // PNG de origen).
+  images: {
+    formats: ["image/avif", "image/webp"],
+  },
 };
 
 export default nextConfig;

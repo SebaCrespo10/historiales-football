@@ -18,6 +18,7 @@ type Filters = {
   estadio: string;
   tipo: string;
   ganador: string;
+  excludeAmistosos: boolean;
 };
 
 const EMPTY_FILTERS: Filters = {
@@ -29,6 +30,7 @@ const EMPTY_FILTERS: Filters = {
   estadio: "",
   tipo: "",
   ganador: "",
+  excludeAmistosos: false,
 };
 
 type Props = {
@@ -37,6 +39,10 @@ type Props = {
   initialTotal: number;
   initialLeadEvolution: LeadPoint[];
   faseOptions: string[];
+  // vistas con recorte propio (/copa-libertadores, /finales, etc.) arrancan
+  // con este filtro ya aplicado -- mismo componente, mismo diseño, otro punto
+  // de partida.
+  initialFilters?: Partial<Filters>;
 };
 
 function GanadorBadge({ ganador }: { ganador: Match["ganador"] }) {
@@ -253,12 +259,14 @@ export function HistorialExplorer({
   initialTotal,
   initialLeadEvolution,
   faseOptions,
+  initialFilters,
 }: Props) {
+  const baseFilters: Filters = { ...EMPTY_FILTERS, ...initialFilters };
   const [summary, setSummary] = useState<Summary>(initialSummary);
   const [matches, setMatches] = useState<Match[]>(initialMatches);
   const [total, setTotal] = useState(initialTotal);
   const [leadEvolution, setLeadEvolution] = useState<LeadPoint[]>(initialLeadEvolution);
-  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [filters, setFilters] = useState<Filters>(baseFilters);
   const [isPending, startTransition] = useTransition();
   const isFirstRun = useRef(true);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -292,6 +300,7 @@ export function HistorialExplorer({
     if (f.estadio) params.set("estadio", f.estadio);
     if (f.tipo) params.set("tipo", f.tipo);
     if (f.ganador) params.set("ganador", f.ganador);
+    if (f.excludeAmistosos) params.set("excludeAmistosos", "1");
     return params;
   }, []);
 
@@ -363,14 +372,15 @@ export function HistorialExplorer({
 
   const hasMore = matches.length < total;
   const hasActiveFilters =
-    filters.fechaDesde !== "" ||
-    filters.fechaHasta !== "" ||
-    filters.torneo !== "" ||
-    filters.fases.length > 0 ||
-    filters.local !== "" ||
-    filters.estadio !== "" ||
-    filters.tipo !== "" ||
-    filters.ganador !== "";
+    filters.fechaDesde !== baseFilters.fechaDesde ||
+    filters.fechaHasta !== baseFilters.fechaHasta ||
+    filters.torneo !== baseFilters.torneo ||
+    filters.fases.length !== baseFilters.fases.length ||
+    filters.fases.some((f) => !baseFilters.fases.includes(f)) ||
+    filters.local !== baseFilters.local ||
+    filters.estadio !== baseFilters.estadio ||
+    filters.tipo !== baseFilters.tipo ||
+    filters.ganador !== baseFilters.ganador;
 
   return (
     <>
@@ -387,7 +397,7 @@ export function HistorialExplorer({
           </h2>
           {hasActiveFilters && (
             <button
-              onClick={() => setFilters(EMPTY_FILTERS)}
+              onClick={() => setFilters(baseFilters)}
               className="text-sm font-semibold text-celeste-dark hover:underline whitespace-nowrap"
             >
               Limpiar filtros

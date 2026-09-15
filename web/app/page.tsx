@@ -1,35 +1,31 @@
-import { getFaseOptions, getLeadEvolution, getMatches, getSummary } from "@/lib/data";
-import { HistorialExplorer } from "@/components/HistorialExplorer";
+import type { Metadata } from "next";
+import { getHistorialPageData } from "@/lib/historial";
+import { HistorialPage } from "@/components/HistorialPage";
+import { JsonLd } from "@/components/JsonLd";
+import { buildHomeJsonLd } from "@/lib/jsonld";
 
 export const dynamic = "force-dynamic";
 
+export const metadata: Metadata = {
+  title: "Superclásico | Historial River - Boca",
+  description:
+    "Historial completo del Superclásico entre River Plate y Boca Juniors: 391 partidos desde 1908, filtrable por torneo, fase, estadio y resultado, con un gráfico de la evolución del historial partido a partido.",
+  alternates: { canonical: "/" },
+};
+
 export default async function Home() {
-  const [summary, { matches, total }, faseOptions, leadEvolution] = await Promise.all([
-    getSummary(),
-    getMatches({ limit: 10, offset: 0 }),
-    getFaseOptions(),
-    getLeadEvolution(),
-  ]);
+  const { summary, matches, total, faseOptions, leadEvolution } = await getHistorialPageData();
 
   return (
-    <main className="flex-1">
-      <div className="flex h-1.5 sm:h-2">
-        <div className="flex-1 bg-celeste" />
-        <div className="flex-1 bg-white" />
-        <div className="flex-1 bg-celeste" />
-      </div>
-
-      <HistorialExplorer
-        initialSummary={summary}
-        initialMatches={matches}
-        initialTotal={total}
-        initialLeadEvolution={leadEvolution}
+    <>
+      <JsonLd data={buildHomeJsonLd(matches)} />
+      <HistorialPage
+        summary={summary}
+        matches={matches}
+        total={total}
         faseOptions={faseOptions}
+        leadEvolution={leadEvolution}
       />
-
-      <footer className="border-t border-gray-100 py-6 text-center text-xs text-gray-400">
-        Historial compilado de Wikipedia · football-web-historiales
-      </footer>
-    </main>
+    </>
   );
 }

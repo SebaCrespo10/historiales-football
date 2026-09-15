@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
   const estadio = params.get("estadio") ?? undefined;
   const tipo = params.get("tipo") ?? undefined;
   const ganador = params.get("ganador") ?? undefined;
+  const excludeAmistosos = params.get("excludeAmistosos") === "1";
   const limit = Number(params.get("limit") ?? "10");
   const offset = Number(params.get("offset") ?? "0");
 
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
       estadio,
       tipo,
       ganador,
+      excludeAmistosos,
       limit,
       offset,
     });

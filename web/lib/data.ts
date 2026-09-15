@@ -38,6 +38,7 @@ export type MatchFilters = {
   estadio?: string;
   tipo?: string;
   ganador?: string;
+  excludeAmistosos?: boolean;
   limit?: number;
   offset?: number;
 };
@@ -104,8 +105,9 @@ function buildWhere(
 
   if (filters.tipo && filters.tipo.trim() !== "") {
     equals("tipo", "tipo", filters.tipo);
-  } else if (opts.excludeAmistosoByDefault) {
+  } else if (filters.excludeAmistosos || opts.excludeAmistosoByDefault) {
     // sin un filtro de tipo explícito, el "historial general" no cuenta amistosos
+    // (o la vista pidió explícitamente excluirlos, ej. /sin-amistosos)
     clauses.push("tipo != 'Amistoso'");
   }
 

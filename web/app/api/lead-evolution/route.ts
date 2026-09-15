@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
   const estadio = params.get("estadio") ?? undefined;
   const tipo = params.get("tipo") ?? undefined;
   const ganador = params.get("ganador") ?? undefined;
+  const excludeAmistosos = params.get("excludeAmistosos") === "1";
 
   try {
     const points = await getLeadEvolution({
@@ -23,6 +24,7 @@ export async function GET(request: NextRequest) {
       estadio,
       tipo,
       ganador,
+      excludeAmistosos,
     });
     return NextResponse.json(points);
   } catch (error) {
