@@ -24,11 +24,6 @@ export type Summary = {
   golesBoca: number;
 };
 
-export type LeadPoint = {
-  fecha: string;
-  cum: number;
-};
-
 export type MatchFilters = {
   fechaDesde?: string;
   fechaHasta?: string;
@@ -176,31 +171,6 @@ export async function getSummary(filters: MatchFilters = {}): Promise<Summary> {
     golesRiver: Number(row.golesRiver),
     golesBoca: Number(row.golesBoca),
   };
-}
-
-export async function getLeadEvolution(filters: MatchFilters = {}): Promise<LeadPoint[]> {
-  const bigquery = getBigQueryClient();
-  const { where, params, types } = buildWhere(filters, {
-    excludeAmistosoByDefault: true,
-  });
-
-  const [rows] = await bigquery.query({
-    query: `
-      SELECT fecha, ganador
-      FROM ${FULL_TABLE}
-      ${where}
-      ORDER BY fecha ASC
-    `,
-    params,
-    types,
-  });
-
-  let cum = 0;
-  return rows.map((row: { fecha: { value: string }; ganador: string }) => {
-    if (row.ganador === "River") cum += 1;
-    else if (row.ganador === "Boca") cum -= 1;
-    return { fecha: row.fecha.value, cum };
-  });
 }
 
 export async function getFaseOptions(): Promise<string[]> {

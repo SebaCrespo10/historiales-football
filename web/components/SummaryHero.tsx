@@ -1,7 +1,6 @@
 import Image from "next/image";
-import type { LeadPoint, Summary } from "@/lib/data";
+import type { Summary } from "@/lib/data";
 import { StatCard } from "./StatCard";
-import { LeadEvolutionChart } from "./LeadEvolutionChart";
 
 const CRESTS = {
   river: { src: "/river-crest.png", alt: "Escudo de River Plate" },
@@ -11,11 +10,9 @@ const CRESTS = {
 export function SummaryHero({
   summary,
   caption,
-  leadEvolution,
 }: {
   summary: Summary;
   caption?: string;
-  leadEvolution: LeadPoint[];
 }) {
   const { total, river, boca, empates } = summary;
   const pct = (n: number) => (total > 0 ? Math.round((n / total) * 1000) / 10 : 0);
@@ -92,8 +89,6 @@ export function SummaryHero({
           {total} partidos disputados
           {caption && <span className="font-normal opacity-80"> ({caption})</span>}
         </p>
-
-        {leadEvolution.length > 1 && <LeadEvolutionChart points={leadEvolution} />}
       </div>
     </section>
   );
