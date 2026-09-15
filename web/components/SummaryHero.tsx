@@ -3,9 +3,11 @@ import type { LeadPoint, Summary } from "@/lib/data";
 import { StatCard } from "./StatCard";
 import { LeadEvolutionChart } from "./LeadEvolutionChart";
 
+// width/height en la proporción real de cada archivo (river 500x620, boca
+// 500x594) para que next/image no infiera un aspect-ratio incorrecto
 const CRESTS = {
-  river: { src: "/river-crest.png", alt: "Escudo de River Plate" },
-  boca: { src: "/boca-crest-v2.png", alt: "Escudo de Boca Juniors" },
+  river: { src: "/river-crest.png", alt: "Escudo de River Plate", width: 96, height: 119 },
+  boca: { src: "/boca-crest-v2.png", alt: "Escudo de Boca Juniors", width: 96, height: 114 },
 };
 
 export function SummaryHero({
@@ -37,8 +39,8 @@ export function SummaryHero({
           <Image
             src={CRESTS[leader].src}
             alt={CRESTS[leader].alt}
-            width={96}
-            height={112}
+            width={CRESTS[leader].width}
+            height={CRESTS[leader].height}
             className="w-16 sm:w-24 h-auto drop-shadow-lg"
             priority
           />
@@ -56,8 +58,8 @@ export function SummaryHero({
           <Image
             src={CRESTS[trailer].src}
             alt={CRESTS[trailer].alt}
-            width={96}
-            height={112}
+            width={CRESTS[trailer].width}
+            height={CRESTS[trailer].height}
             className="w-16 sm:w-24 h-auto drop-shadow-lg"
             priority
           />

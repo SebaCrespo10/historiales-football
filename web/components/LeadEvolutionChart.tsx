@@ -21,7 +21,7 @@ const BOCA_BLUE = "#0a3d91";
 const NEUTRAL = "#9ca3af";
 const AXIS_COLOR = NEUTRAL;
 const GRID_COLOR = "#e5e7eb";
-const MIN_LABEL_GAP = 14;
+const MIN_LABEL_PIXEL_GAP = 32; // ancho mínimo (px) entre el inicio de dos etiquetas de década
 
 function colorForSign(sign: number) {
   if (sign > 0) return RIVER_RED;
@@ -29,26 +29,46 @@ function colorForSign(sign: number) {
   return NEUTRAL;
 }
 
-// etiquetas de década en el eje X, salteando cualquiera que quede a menos de
-// MIN_LABEL_GAP partidos de la anterior mostrada (si no, se superponen en las
-// décadas viejas, donde hay pocos partidos por año)
-function buildDecadeLabels(fechas: string[]): Record<number, string> {
-  const labelAt: Record<number, string> = {};
+type DecadeCandidate = { index: number; label: string };
+
+// una candidata por década: el primer partido de cada década
+function buildDecadeCandidates(fechas: string[]): DecadeCandidate[] {
+  const candidates: DecadeCandidate[] = [];
   let currentDecade: number | null = null;
-  let lastShownIndex = -Infinity;
 
   fechas.forEach((fecha, i) => {
     const decade = Math.floor(parseInt(fecha.slice(0, 4), 10) / 10) * 10;
     if (decade !== currentDecade) {
       currentDecade = decade;
-      if (i - lastShownIndex >= MIN_LABEL_GAP) {
-        labelAt[i] = String(decade);
-        lastShownIndex = i;
-      }
+      candidates.push({ index: i, label: String(decade) });
     }
   });
 
-  return labelAt;
+  return candidates;
+}
+
+// filtra las candidatas que quedarían pisadas entre sí dado el ancho real del
+// eje en ese momento (recalculado en cada draw, así también se adapta si la
+// pantalla cambia de tamaño) -- en décadas viejas con pocos partidos, varias
+// candidatas quedan muy cerca en el eje y hay que saltear algunas.
+function pickVisibleDecadeLabels(
+  candidates: DecadeCandidate[],
+  totalPoints: number,
+  axisPixelWidth: number
+): Record<number, string> {
+  const pixelsPerIndex = totalPoints > 1 ? axisPixelWidth / (totalPoints - 1) : axisPixelWidth;
+  const minIndexGap = Math.max(1, Math.ceil(MIN_LABEL_PIXEL_GAP / pixelsPerIndex));
+
+  const visible: Record<number, string> = {};
+  let lastShownIndex = -Infinity;
+  candidates.forEach(({ index, label }) => {
+    if (index - lastShownIndex >= minIndexGap) {
+      visible[index] = label;
+      lastShownIndex = index;
+    }
+  });
+
+  return visible;
 }
 
 export function LeadEvolutionChart({ points }: { points: LeadPoint[] }) {
@@ -62,7 +82,13 @@ export function LeadEvolutionChart({ points }: { points: LeadPoint[] }) {
     const labels = points.map((p) => p.fecha);
     const values = points.map((p) => Math.abs(p.cum));
     const signs = points.map((p) => Math.sign(p.cum));
-    const decadeLabelAt = buildDecadeLabels(labels);
+    const decadeCandidates = buildDecadeCandidates(labels);
+    const totalPoints = points.length;
+
+    function decadeTickLabel(this: { width: number }, _value: unknown, index: number): string {
+      const visible = pickVisibleDecadeLabels(decadeCandidates, totalPoints, this.width);
+      return visible[index] ?? "";
+    }
 
     const dataset: ChartDataset<"line", number[]> = {
       data: values,
@@ -108,7 +134,7 @@ export function LeadEvolutionChart({ points }: { points: LeadPoint[] }) {
                 maxRotation: 0,
                 color: AXIS_COLOR,
                 font: { size: 10 },
-                callback: (_value, index) => decadeLabelAt[index] ?? "",
+                callback: decadeTickLabel,
               },
             },
             y: {
@@ -122,8 +148,7 @@ export function LeadEvolutionChart({ points }: { points: LeadPoint[] }) {
     } else {
       chartRef.current.data.labels = labels;
       chartRef.current.data.datasets = [dataset];
-      chartRef.current.options.scales!.x!.ticks!.callback = (_value, index) =>
-        decadeLabelAt[index] ?? "";
+      chartRef.current.options.scales!.x!.ticks!.callback = decadeTickLabel;
       chartRef.current.update();
     }
   }, [points]);
