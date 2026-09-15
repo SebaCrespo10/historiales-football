@@ -63,7 +63,7 @@ function TipoPill({ tipo }: { tipo: string }) {
 }
 
 const inputClass =
-  "w-full min-w-0 px-2 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-normal text-negro placeholder:text-gray-400 focus:outline-none focus:border-celeste focus:ring-2 focus:ring-celeste/30";
+  "w-full min-w-0 h-8 px-2 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-normal text-negro placeholder:text-gray-400 focus:outline-none focus:border-celeste focus:ring-2 focus:ring-celeste/30";
 
 function ColumnTextFilter({
   value,
@@ -142,7 +142,7 @@ function DateOnlyPicker({
         aria-label={label}
         className="peer absolute inset-0 h-full w-full opacity-0"
       />
-      <div className="w-full min-w-0 px-1 py-1.5 rounded-md border border-gray-300 bg-white text-[10px] whitespace-nowrap overflow-hidden font-normal pointer-events-none peer-focus:ring-2 peer-focus:ring-celeste peer-focus:border-celeste">
+      <div className="w-full min-w-0 h-8 px-1 flex items-center rounded-md border border-gray-300 bg-white text-[10px] whitespace-nowrap overflow-hidden font-normal pointer-events-none peer-focus:ring-2 peer-focus:ring-celeste peer-focus:border-celeste">
         <span className={value ? "text-negro" : "text-gray-400"}>
           {value ? formatDate(value) : label}
         </span>
@@ -384,7 +384,7 @@ export function HistorialExplorer({
             <thead>
               <tr className="bg-negro text-white text-left">
                 <th className="px-3 pt-2.5 font-semibold">Fecha</th>
-                <th className="px-3 pt-2.5 font-semibold">Tipo</th>
+                <th className="px-3 pt-2.5 font-semibold w-28">Tipo</th>
                 <th className="px-3 pt-2.5 font-semibold text-center w-32">Resultado</th>
                 <th className="px-3 pt-2.5 font-semibold">Torneo</th>
                 <th className="px-3 pt-2.5 font-semibold">Estadio</th>
@@ -400,7 +400,7 @@ export function HistorialExplorer({
                     onChangeHasta={(v) => setFilter("fechaHasta", v)}
                   />
                 </th>
-                <th className="px-3 pb-2.5 align-top">
+                <th className="px-3 pb-2.5 align-top w-28">
                   <ColumnSelectFilter
                     value={filters.tipo}
                     onChange={(v) => setFilter("tipo", v)}
@@ -460,7 +460,7 @@ export function HistorialExplorer({
                   <td className="px-3 py-2.5 whitespace-nowrap text-gray-600">
                     {m.fecha}
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className="px-3 py-2.5 w-28">
                     <TipoPill tipo={m.tipo} />
                   </td>
                   <td className="px-3 py-2.5 w-32">
