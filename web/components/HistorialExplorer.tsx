@@ -145,13 +145,10 @@ function DateOnlyPicker({
       <button
         type="button"
         onClick={openPicker}
-        className={`${inputClass} text-left flex items-center justify-between gap-1`}
+        className={`${inputClass} text-left`}
       >
         <span className={value ? "text-negro" : "text-gray-400"}>
           {value ? formatDate(value) : label}
-        </span>
-        <span className="text-gray-400 shrink-0" aria-hidden>
-          📅
         </span>
       </button>
       <input
