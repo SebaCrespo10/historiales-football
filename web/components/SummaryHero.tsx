@@ -5,7 +5,7 @@ import { LeadEvolutionChart } from "./LeadEvolutionChart";
 
 const CRESTS = {
   river: { src: "/river-crest.png", alt: "Escudo de River Plate" },
-  boca: { src: "/boca-crest.png", alt: "Escudo de Boca Juniors" },
+  boca: { src: "/boca-crest-v2.png", alt: "Escudo de Boca Juniors" },
 };
 
 export function SummaryHero({
