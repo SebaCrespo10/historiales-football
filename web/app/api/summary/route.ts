@@ -4,9 +4,10 @@ import { getSummary } from "@/lib/data";
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
 
-  const fecha = params.get("fecha") ?? undefined;
+  const fechaDesde = params.get("fechaDesde") ?? undefined;
+  const fechaHasta = params.get("fechaHasta") ?? undefined;
   const torneo = params.get("torneo") ?? undefined;
-  const fase = params.get("fase") ?? undefined;
+  const fases = params.getAll("fase");
   const local = params.get("local") ?? undefined;
   const estadio = params.get("estadio") ?? undefined;
   const tipo = params.get("tipo") ?? undefined;
@@ -14,9 +15,10 @@ export async function GET(request: NextRequest) {
 
   try {
     const summary = await getSummary({
-      fecha,
+      fechaDesde,
+      fechaHasta,
       torneo,
-      fase,
+      fases,
       local,
       estadio,
       tipo,

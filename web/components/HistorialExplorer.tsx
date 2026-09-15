@@ -10,9 +10,10 @@ const DEBOUNCE_MS = 350;
 const TIPOS = ["Torneo Local", "Copa Local", "Copa Internacional", "Amistoso"];
 
 type Filters = {
-  fecha: string;
+  fechaDesde: string;
+  fechaHasta: string;
   torneo: string;
-  fase: string;
+  fases: string[];
   local: string;
   estadio: string;
   tipo: string;
@@ -20,9 +21,10 @@ type Filters = {
 };
 
 const EMPTY_FILTERS: Filters = {
-  fecha: "",
+  fechaDesde: "",
+  fechaHasta: "",
   torneo: "",
-  fase: "",
+  fases: [],
   local: "",
   estadio: "",
   tipo: "",
@@ -33,6 +35,7 @@ type Props = {
   initialSummary: Summary;
   initialMatches: Match[];
   initialTotal: number;
+  faseOptions: string[];
 };
 
 function GanadorBadge({ ganador }: { ganador: Match["ganador"] }) {
@@ -102,12 +105,122 @@ function ColumnSelectFilter({
   );
 }
 
+function ColumnDateRangeFilter({
+  desde,
+  hasta,
+  onChangeDesde,
+  onChangeHasta,
+}: {
+  desde: string;
+  hasta: string;
+  onChangeDesde: (value: string) => void;
+  onChangeHasta: (value: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <input
+        type="date"
+        value={desde}
+        onChange={(e) => onChangeDesde(e.target.value)}
+        title="Desde"
+        max={hasta || undefined}
+        className={`${inputClass} [color-scheme:light]`}
+      />
+      <input
+        type="date"
+        value={hasta}
+        onChange={(e) => onChangeHasta(e.target.value)}
+        title="Hasta"
+        min={desde || undefined}
+        className={`${inputClass} [color-scheme:light]`}
+      />
+    </div>
+  );
+}
+
+function ColumnMultiSelectFilter({
+  options,
+  selected,
+  onChange,
+}: {
+  options: string[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const toggle = (opt: string) => {
+    onChange(selected.includes(opt) ? selected.filter((v) => v !== opt) : [...selected, opt]);
+  };
+
+  const label =
+    selected.length === 0
+      ? "Todas"
+      : selected.length === 1
+        ? selected[0]
+        : `${selected.length} seleccionadas`;
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`${inputClass} text-left flex items-center justify-between gap-1`}
+      >
+        <span className="truncate">{label}</span>
+        <span className="text-gray-400 shrink-0">▾</span>
+      </button>
+      {open && (
+        <div className="absolute z-10 mt-1 w-40 max-h-56 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg py-1">
+          {selected.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="w-full text-left px-2.5 py-1 text-xs font-semibold text-celeste-dark hover:bg-celeste-light"
+            >
+              Limpiar
+            </button>
+          )}
+          {options.map((opt) => (
+            <label
+              key={opt}
+              className="flex items-center gap-2 px-2.5 py-1 text-xs text-negro hover:bg-gray-50 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                checked={selected.includes(opt)}
+                onChange={() => toggle(opt)}
+                className="accent-celeste"
+              />
+              {opt}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function summaryCaption(tipo: string): string | undefined {
   if (!tipo) return "no incluye amistosos";
   return `solo ${tipo}`;
 }
 
-export function HistorialExplorer({ initialSummary, initialMatches, initialTotal }: Props) {
+export function HistorialExplorer({
+  initialSummary,
+  initialMatches,
+  initialTotal,
+  faseOptions,
+}: Props) {
   const [summary, setSummary] = useState<Summary>(initialSummary);
   const [matches, setMatches] = useState<Match[]>(initialMatches);
   const [total, setTotal] = useState(initialTotal);
@@ -115,15 +228,20 @@ export function HistorialExplorer({ initialSummary, initialMatches, initialTotal
   const [isPending, startTransition] = useTransition();
   const isFirstRun = useRef(true);
 
-  const setFilter = (key: keyof Filters, value: string) => {
+  const setFilter = <K extends keyof Filters>(key: K, value: Filters[K]) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const buildParams = useCallback((f: Filters) => {
     const params = new URLSearchParams();
-    (Object.keys(f) as (keyof Filters)[]).forEach((key) => {
-      if (f[key]) params.set(key, f[key]);
-    });
+    if (f.fechaDesde) params.set("fechaDesde", f.fechaDesde);
+    if (f.fechaHasta) params.set("fechaHasta", f.fechaHasta);
+    if (f.torneo) params.set("torneo", f.torneo);
+    f.fases.forEach((fase) => params.append("fase", fase));
+    if (f.local) params.set("local", f.local);
+    if (f.estadio) params.set("estadio", f.estadio);
+    if (f.tipo) params.set("tipo", f.tipo);
+    if (f.ganador) params.set("ganador", f.ganador);
     return params;
   }, []);
 
@@ -187,7 +305,15 @@ export function HistorialExplorer({ initialSummary, initialMatches, initialTotal
   };
 
   const hasMore = matches.length < total;
-  const hasActiveFilters = Object.values(filters).some((v) => v !== "");
+  const hasActiveFilters =
+    filters.fechaDesde !== "" ||
+    filters.fechaHasta !== "" ||
+    filters.torneo !== "" ||
+    filters.fases.length > 0 ||
+    filters.local !== "" ||
+    filters.estadio !== "" ||
+    filters.tipo !== "" ||
+    filters.ganador !== "";
 
   return (
     <>
@@ -209,7 +335,7 @@ export function HistorialExplorer({ initialSummary, initialMatches, initialTotal
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-gray-200">
-          <table className="w-full text-sm min-w-[820px]">
+          <table className="w-full text-sm min-w-[860px]">
             <thead>
               <tr className="bg-negro text-white text-left">
                 <th className="px-3 pt-2.5 font-semibold">Fecha</th>
@@ -221,28 +347,29 @@ export function HistorialExplorer({ initialSummary, initialMatches, initialTotal
                 <th className="px-3 pt-2.5 font-semibold text-center w-32">Resultado</th>
               </tr>
               <tr className="bg-negro">
-                <th className="px-3 pb-2.5">
-                  <ColumnTextFilter
-                    value={filters.fecha}
-                    onChange={(v) => setFilter("fecha", v)}
-                    placeholder="ej. 2024"
+                <th className="px-3 pb-2.5 align-top">
+                  <ColumnDateRangeFilter
+                    desde={filters.fechaDesde}
+                    hasta={filters.fechaHasta}
+                    onChangeDesde={(v) => setFilter("fechaDesde", v)}
+                    onChangeHasta={(v) => setFilter("fechaHasta", v)}
                   />
                 </th>
-                <th className="px-3 pb-2.5">
+                <th className="px-3 pb-2.5 align-top">
                   <ColumnTextFilter
                     value={filters.torneo}
                     onChange={(v) => setFilter("torneo", v)}
                     placeholder="Buscar..."
                   />
                 </th>
-                <th className="px-3 pb-2.5">
-                  <ColumnTextFilter
-                    value={filters.fase}
-                    onChange={(v) => setFilter("fase", v)}
-                    placeholder="Buscar..."
+                <th className="px-3 pb-2.5 align-top">
+                  <ColumnMultiSelectFilter
+                    options={faseOptions}
+                    selected={filters.fases}
+                    onChange={(v) => setFilter("fases", v)}
                   />
                 </th>
-                <th className="px-3 pb-2.5">
+                <th className="px-3 pb-2.5 align-top">
                   <ColumnSelectFilter
                     value={filters.local}
                     onChange={(v) => setFilter("local", v)}
@@ -252,21 +379,21 @@ export function HistorialExplorer({ initialSummary, initialMatches, initialTotal
                     ]}
                   />
                 </th>
-                <th className="px-3 pb-2.5">
+                <th className="px-3 pb-2.5 align-top">
                   <ColumnTextFilter
                     value={filters.estadio}
                     onChange={(v) => setFilter("estadio", v)}
                     placeholder="Buscar..."
                   />
                 </th>
-                <th className="px-3 pb-2.5">
+                <th className="px-3 pb-2.5 align-top">
                   <ColumnSelectFilter
                     value={filters.tipo}
                     onChange={(v) => setFilter("tipo", v)}
                     options={TIPOS.map((t) => ({ value: t, label: t }))}
                   />
                 </th>
-                <th className="px-3 pb-2.5 w-32">
+                <th className="px-3 pb-2.5 align-top w-32">
                   <ColumnSelectFilter
                     value={filters.ganador}
                     onChange={(v) => setFilter("ganador", v)}

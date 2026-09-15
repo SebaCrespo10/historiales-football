@@ -1,3 +1,4 @@
+import { BigQuery } from "@google-cloud/bigquery";
 import { getBigQueryClient, FULL_TABLE } from "./bigquery";
 
 export type Match = {
@@ -24,9 +25,10 @@ export type Summary = {
 };
 
 export type MatchFilters = {
-  fecha?: string;
+  fechaDesde?: string;
+  fechaHasta?: string;
   torneo?: string;
-  fase?: string;
+  fases?: string[];
   local?: string;
   estadio?: string;
   tipo?: string;
@@ -58,7 +60,7 @@ function buildWhere(
 ) {
   const clauses: string[] = [];
   const params: Record<string, unknown> = {};
-  const types: Record<string, string> = {};
+  const types: Record<string, string | string[]> = {};
 
   const like = (column: string, key: string, value?: string) => {
     if (value && value.trim() !== "") {
@@ -75,9 +77,22 @@ function buildWhere(
     }
   };
 
-  like("fecha", "fecha", filters.fecha);
+  if (filters.fechaDesde) {
+    clauses.push("fecha >= @fechaDesde");
+    // el cliente de Node necesita el valor envuelto con BigQuery.date(): pasar
+    // un string plano con types:{...:"DATE"} lo manda mal y la condición no matchea nada.
+    params.fechaDesde = BigQuery.date(filters.fechaDesde);
+  }
+  if (filters.fechaHasta) {
+    clauses.push("fecha <= @fechaHasta");
+    params.fechaHasta = BigQuery.date(filters.fechaHasta);
+  }
   like("torneo", "torneo", filters.torneo);
-  like("fase", "fase", filters.fase);
+  if (filters.fases && filters.fases.length > 0) {
+    clauses.push("fase IN UNNEST(@fases)");
+    params.fases = filters.fases;
+    types.fases = ["STRING"];
+  }
   like("estadio", "estadio", filters.estadio);
   equals("local", "local", filters.local);
   equals("ganador", "ganador", filters.ganador);
@@ -156,4 +171,26 @@ export async function getSummary(filters: MatchFilters = {}): Promise<Summary> {
     golesRiver: Number(row.golesRiver),
     golesBoca: Number(row.golesBoca),
   };
+}
+
+export async function getFaseOptions(): Promise<string[]> {
+  const bigquery = getBigQueryClient();
+  const [rows] = await bigquery.query({
+    query: `SELECT DISTINCT fase FROM ${FULL_TABLE} WHERE fase != '' ORDER BY fase`,
+  });
+
+  const fases = rows.map((r: { fase: string }) => r.fase);
+
+  // las "fechas" de campeonato (fase = número de jornada) van primero y en
+  // orden numérico; el resto de las fases (nombres) van después, alfabético
+  return fases.sort((a, b) => {
+    const na = Number(a);
+    const nb = Number(b);
+    const aIsNum = a !== "" && !Number.isNaN(na);
+    const bIsNum = b !== "" && !Number.isNaN(nb);
+    if (aIsNum && bIsNum) return na - nb;
+    if (aIsNum) return -1;
+    if (bIsNum) return 1;
+    return a.localeCompare(b, "es");
+  });
 }
