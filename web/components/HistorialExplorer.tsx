@@ -403,12 +403,12 @@ export function HistorialExplorer({
             <thead>
               <tr className="bg-negro text-white text-left">
                 <th className="px-3 pt-2.5 font-semibold">Fecha</th>
-                <th className="px-3 pt-2.5 font-semibold">Torneo</th>
-                <th className="px-3 pt-2.5 font-semibold">Fase</th>
-                <th className="px-3 pt-2.5 font-semibold">Partido</th>
-                <th className="px-3 pt-2.5 font-semibold">Estadio</th>
                 <th className="px-3 pt-2.5 font-semibold">Tipo</th>
                 <th className="px-3 pt-2.5 font-semibold text-center w-32">Resultado</th>
+                <th className="px-3 pt-2.5 font-semibold">Torneo</th>
+                <th className="px-3 pt-2.5 font-semibold">Estadio</th>
+                <th className="px-3 pt-2.5 font-semibold">Partido</th>
+                <th className="px-3 pt-2.5 font-semibold">Fase</th>
               </tr>
               <tr className="bg-negro">
                 <th className="px-3 pb-2.5 align-top">
@@ -417,37 +417,6 @@ export function HistorialExplorer({
                     hasta={filters.fechaHasta}
                     onChangeDesde={(v) => setFilter("fechaDesde", v)}
                     onChangeHasta={(v) => setFilter("fechaHasta", v)}
-                  />
-                </th>
-                <th className="px-3 pb-2.5 align-top">
-                  <ColumnTextFilter
-                    value={filters.torneo}
-                    onChange={(v) => setFilter("torneo", v)}
-                    placeholder="Buscar..."
-                  />
-                </th>
-                <th className="px-3 pb-2.5 align-top">
-                  <ColumnMultiSelectFilter
-                    options={faseOptions}
-                    selected={filters.fases}
-                    onChange={(v) => setFilter("fases", v)}
-                  />
-                </th>
-                <th className="px-3 pb-2.5 align-top">
-                  <ColumnSelectFilter
-                    value={filters.local}
-                    onChange={(v) => setFilter("local", v)}
-                    options={[
-                      { value: "River Plate", label: "River de local" },
-                      { value: "Boca Juniors", label: "Boca de local" },
-                    ]}
-                  />
-                </th>
-                <th className="px-3 pb-2.5 align-top">
-                  <ColumnTextFilter
-                    value={filters.estadio}
-                    onChange={(v) => setFilter("estadio", v)}
-                    placeholder="Buscar..."
                   />
                 </th>
                 <th className="px-3 pb-2.5 align-top">
@@ -468,6 +437,37 @@ export function HistorialExplorer({
                     ]}
                   />
                 </th>
+                <th className="px-3 pb-2.5 align-top">
+                  <ColumnTextFilter
+                    value={filters.torneo}
+                    onChange={(v) => setFilter("torneo", v)}
+                    placeholder="Buscar..."
+                  />
+                </th>
+                <th className="px-3 pb-2.5 align-top">
+                  <ColumnTextFilter
+                    value={filters.estadio}
+                    onChange={(v) => setFilter("estadio", v)}
+                    placeholder="Buscar..."
+                  />
+                </th>
+                <th className="px-3 pb-2.5 align-top">
+                  <ColumnSelectFilter
+                    value={filters.local}
+                    onChange={(v) => setFilter("local", v)}
+                    options={[
+                      { value: "River Plate", label: "River de local" },
+                      { value: "Boca Juniors", label: "Boca de local" },
+                    ]}
+                  />
+                </th>
+                <th className="px-3 pb-2.5 align-top">
+                  <ColumnMultiSelectFilter
+                    options={faseOptions}
+                    selected={filters.fases}
+                    onChange={(v) => setFilter("fases", v)}
+                  />
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -479,12 +479,6 @@ export function HistorialExplorer({
                   <td className="px-3 py-2.5 whitespace-nowrap text-gray-600">
                     {m.fecha}
                   </td>
-                  <td className="px-3 py-2.5">{m.torneo}</td>
-                  <td className="px-3 py-2.5 text-gray-500">{m.fase || "—"}</td>
-                  <td className="px-3 py-2.5 font-medium whitespace-nowrap">
-                    {m.local} <span className="text-gray-400 mx-1">vs</span> {m.visitante}
-                  </td>
-                  <td className="px-3 py-2.5 text-gray-600">{m.estadio}</td>
                   <td className="px-3 py-2.5">
                     <TipoPill tipo={m.tipo} />
                   </td>
@@ -494,6 +488,12 @@ export function HistorialExplorer({
                       <GanadorBadge ganador={m.ganador} />
                     </div>
                   </td>
+                  <td className="px-3 py-2.5">{m.torneo}</td>
+                  <td className="px-3 py-2.5 text-gray-600">{m.estadio}</td>
+                  <td className="px-3 py-2.5 font-medium whitespace-nowrap">
+                    {m.local} <span className="text-gray-400 mx-1">vs</span> {m.visitante}
+                  </td>
+                  <td className="px-3 py-2.5 text-gray-500">{m.fase || "—"}</td>
                 </tr>
               ))}
               {matches.length === 0 && (
