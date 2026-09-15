@@ -105,6 +105,70 @@ function ColumnSelectFilter({
   );
 }
 
+function formatDate(value: string): string {
+  if (!value) return "";
+  const [year, month, day] = value.split("-");
+  return `${day}/${month}/${year}`;
+}
+
+// botón que solo dispara el calendario nativo (showPicker): el input real
+// queda oculto para que no se pueda escribir la fecha a mano ni se vea el
+// placeholder dd/mm/aaaa del navegador.
+function DateOnlyPicker({
+  value,
+  onChange,
+  label,
+  min,
+  max,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  label: string;
+  min?: string;
+  max?: string;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+
+  const openPicker = () => {
+    const input = ref.current;
+    if (!input) return;
+    if (typeof input.showPicker === "function") {
+      input.showPicker();
+    } else {
+      input.focus();
+    }
+  };
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={openPicker}
+        className={`${inputClass} text-left flex items-center justify-between gap-1`}
+      >
+        <span className={value ? "text-negro" : "text-gray-400"}>
+          {value ? formatDate(value) : label}
+        </span>
+        <span className="text-gray-400 shrink-0" aria-hidden>
+          📅
+        </span>
+      </button>
+      <input
+        ref={ref}
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        min={min || undefined}
+        max={max || undefined}
+        onKeyDown={(e) => e.preventDefault()}
+        tabIndex={-1}
+        aria-label={label}
+        className="absolute inset-0 h-full w-full opacity-0 pointer-events-none"
+      />
+    </div>
+  );
+}
+
 function ColumnDateRangeFilter({
   desde,
   hasta,
@@ -117,23 +181,9 @@ function ColumnDateRangeFilter({
   onChangeHasta: (value: string) => void;
 }) {
   return (
-    <div className="flex items-center gap-1 whitespace-nowrap">
-      <span className="text-[10px] font-semibold text-gray-400 uppercase">Desde</span>
-      <input
-        type="date"
-        value={desde}
-        onChange={(e) => onChangeDesde(e.target.value)}
-        max={hasta || undefined}
-        className={`${inputClass} [color-scheme:light] px-1.5`}
-      />
-      <span className="text-[10px] font-semibold text-gray-400 uppercase">Hasta</span>
-      <input
-        type="date"
-        value={hasta}
-        onChange={(e) => onChangeHasta(e.target.value)}
-        min={desde || undefined}
-        className={`${inputClass} [color-scheme:light] px-1.5`}
-      />
+    <div className="flex items-center gap-1">
+      <DateOnlyPicker value={desde} onChange={onChangeDesde} label="Desde" max={hasta} />
+      <DateOnlyPicker value={hasta} onChange={onChangeHasta} label="Hasta" min={desde} />
     </div>
   );
 }
