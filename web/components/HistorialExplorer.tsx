@@ -117,22 +117,22 @@ function ColumnDateRangeFilter({
   onChangeHasta: (value: string) => void;
 }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex items-center gap-1 whitespace-nowrap">
+      <span className="text-[10px] font-semibold text-gray-400 uppercase">Desde</span>
       <input
         type="date"
         value={desde}
         onChange={(e) => onChangeDesde(e.target.value)}
-        title="Desde"
         max={hasta || undefined}
-        className={`${inputClass} [color-scheme:light]`}
+        className={`${inputClass} [color-scheme:light] px-1.5`}
       />
+      <span className="text-[10px] font-semibold text-gray-400 uppercase">Hasta</span>
       <input
         type="date"
         value={hasta}
         onChange={(e) => onChangeHasta(e.target.value)}
-        title="Hasta"
         min={desde || undefined}
-        className={`${inputClass} [color-scheme:light]`}
+        className={`${inputClass} [color-scheme:light] px-1.5`}
       />
     </div>
   );
@@ -335,7 +335,7 @@ export function HistorialExplorer({
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-gray-200">
-          <table className="w-full text-sm min-w-[860px]">
+          <table className="w-full text-sm min-w-[960px]">
             <thead>
               <tr className="bg-negro text-white text-left">
                 <th className="px-3 pt-2.5 font-semibold">Fecha</th>
