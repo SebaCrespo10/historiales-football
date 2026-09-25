@@ -8,7 +8,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # NEXT_PUBLIC_* se incrusta en el build, por eso va como ARG.
-ARG NEXT_PUBLIC_SITE_URL
+ARG NEXT_PUBLIC_SITE_URL=https://historialsuperclasico.com.ar
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
