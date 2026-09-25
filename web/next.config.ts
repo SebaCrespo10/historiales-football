@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // build autocontenido (server.js + dependencias mínimas) para la imagen
+  // de Docker de Cloud Run.
+  output: "standalone",
   // permite abrir el servidor de desarrollo desde el celu/otra compu de la
   // misma red (ej. http://192.168.1.101:3001) -- si no, next bloquea los
   // recursos de dev (JS de hidratación) y los componentes interactivos
