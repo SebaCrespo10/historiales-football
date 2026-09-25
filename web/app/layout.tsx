@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -12,6 +13,9 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+// solo se carga con el ID seteado (producción); en local no se mide.
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 const DEFAULT_DESCRIPTION =
   "Historial completo del Superclásico entre River Plate y Boca Juniors: 391 partidos desde 1908, filtrable por torneo, fase, estadio y resultado.";
@@ -46,6 +50,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col bg-white text-negro">
         {children}
+        {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
       </body>
     </html>
   );
