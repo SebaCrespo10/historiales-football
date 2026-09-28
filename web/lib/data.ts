@@ -1,5 +1,14 @@
 import { BigQuery } from "@google-cloud/bigquery";
+import { unstable_cache } from "next/cache";
 import { getBigQueryClient, FULL_TABLE } from "./bigquery";
+
+// los datos solo cambian cuando se juega un partido y se carga a mano en
+// BigQuery -- no tiene sentido volver a consultarla por tiempo. La caché
+// queda congelada (revalidate: false) y se "descongela" a demanda: forzar
+// una revisión nueva del servicio de Cloud Run limpia la caché de arranque
+// (ver README de despliegue / pedirlo directamente). Las páginas siguen
+// siendo dinámicas por los filtros de URL; lo único que se cachea es el
+// resultado de la consulta a BigQuery.
 
 export type Match = {
   fecha: string;
@@ -115,7 +124,7 @@ function buildWhere(
   return { where, params, types };
 }
 
-export async function getMatches(
+async function getMatchesImpl(
   filters: MatchFilters = {}
 ): Promise<{ matches: Match[]; total: number }> {
   const bigquery = getBigQueryClient();
@@ -147,7 +156,7 @@ export async function getMatches(
   };
 }
 
-export async function getSummary(filters: MatchFilters = {}): Promise<Summary> {
+async function getSummaryImpl(filters: MatchFilters = {}): Promise<Summary> {
   const bigquery = getBigQueryClient();
   const { where, params, types } = buildWhere(filters, {
     excludeAmistosoByDefault: true,
@@ -180,7 +189,7 @@ export async function getSummary(filters: MatchFilters = {}): Promise<Summary> {
   };
 }
 
-export async function getLeadEvolution(filters: MatchFilters = {}): Promise<LeadPoint[]> {
+async function getLeadEvolutionImpl(filters: MatchFilters = {}): Promise<LeadPoint[]> {
   const bigquery = getBigQueryClient();
   const { where, params, types } = buildWhere(filters, {
     excludeAmistosoByDefault: true,
@@ -205,7 +214,7 @@ export async function getLeadEvolution(filters: MatchFilters = {}): Promise<Lead
   });
 }
 
-export async function getFaseOptions(): Promise<string[]> {
+async function getFaseOptionsImpl(): Promise<string[]> {
   const bigquery = getBigQueryClient();
   const [rows] = await bigquery.query({
     query: `SELECT DISTINCT fase FROM ${FULL_TABLE} WHERE fase != '' ORDER BY fase`,
@@ -226,3 +235,20 @@ export async function getFaseOptions(): Promise<string[]> {
     return a.localeCompare(b, "es");
   });
 }
+
+// las cuatro consultas a BigQuery quedan cacheadas por REVALIDATE_SECONDS,
+// con clave por función + argumentos serializados (los filtros).
+export const getMatches = unstable_cache(getMatchesImpl, ["get-matches"], {
+  revalidate: false,
+});
+export const getSummary = unstable_cache(getSummaryImpl, ["get-summary"], {
+  revalidate: false,
+});
+export const getLeadEvolution = unstable_cache(
+  getLeadEvolutionImpl,
+  ["get-lead-evolution"],
+  { revalidate: false }
+);
+export const getFaseOptions = unstable_cache(getFaseOptionsImpl, ["get-fase-options"], {
+  revalidate: false,
+});
