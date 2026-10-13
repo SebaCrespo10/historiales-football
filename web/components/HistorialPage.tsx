@@ -1,4 +1,5 @@
 import { HistorialExplorer } from "@/components/HistorialExplorer";
+import { OtrasVistas } from "@/components/OtrasVistas";
 import type { LeadPoint, Match, Summary } from "@/lib/data";
 
 type Filters = React.ComponentProps<typeof HistorialExplorer>["initialFilters"];
@@ -10,6 +11,7 @@ export function HistorialPage({
   faseOptions,
   leadEvolution,
   initialFilters,
+  currentPath = "/",
 }: {
   summary: Summary;
   matches: Match[];
@@ -17,6 +19,7 @@ export function HistorialPage({
   faseOptions: string[];
   leadEvolution: LeadPoint[];
   initialFilters?: Filters;
+  currentPath?: string;
 }) {
   return (
     <main className="flex-1">
@@ -34,6 +37,8 @@ export function HistorialPage({
         faseOptions={faseOptions}
         initialFilters={initialFilters}
       />
+
+      <OtrasVistas currentPath={currentPath} />
 
       <footer className="border-t border-gray-100 py-6 text-center text-xs text-gray-400">
         Historial compilado de Wikipedia · football-web-historiales

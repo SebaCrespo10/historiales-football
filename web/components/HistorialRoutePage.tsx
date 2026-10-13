@@ -19,6 +19,7 @@ export async function HistorialRoutePage({ path }: { path: string }) {
       faseOptions={faseOptions}
       leadEvolution={leadEvolution}
       initialFilters={route.filters}
+      currentPath={path}
     />
   );
 }

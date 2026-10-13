@@ -2,6 +2,7 @@ import type { MatchFilters } from "./data";
 
 export type HistorialRoute = {
   path: string;
+  label: string; // texto corto para los links de navegación entre vistas
   filters: MatchFilters;
   title: string;
   description: string;
@@ -13,6 +14,7 @@ export type HistorialRoute = {
 export const HISTORIAL_ROUTES: HistorialRoute[] = [
   {
     path: "/copa-libertadores",
+    label: "Copas internacionales",
     filters: { tipo: "Copa Internacional" },
     title: "Superclásico en copas internacionales",
     description:
@@ -20,6 +22,7 @@ export const HISTORIAL_ROUTES: HistorialRoute[] = [
   },
   {
     path: "/finales",
+    label: "Finales",
     filters: { fases: ["Final", "Final (Ida)", "Final (Vuelta)"] },
     title: "Finales del Superclásico",
     description:
@@ -27,6 +30,7 @@ export const HISTORIAL_ROUTES: HistorialRoute[] = [
   },
   {
     path: "/river-de-visitante",
+    label: "River de visitante",
     filters: { local: "Boca Juniors" },
     title: "River de visitante ante Boca",
     description:
@@ -34,6 +38,7 @@ export const HISTORIAL_ROUTES: HistorialRoute[] = [
   },
   {
     path: "/boca-de-visitante",
+    label: "Boca de visitante",
     filters: { local: "River Plate" },
     title: "Boca de visitante ante River",
     description:
@@ -41,6 +46,7 @@ export const HISTORIAL_ROUTES: HistorialRoute[] = [
   },
   {
     path: "/amistosos",
+    label: "Amistosos",
     filters: { tipo: "Amistoso" },
     title: "Superclásicos amistosos",
     description:
@@ -48,6 +54,7 @@ export const HISTORIAL_ROUTES: HistorialRoute[] = [
   },
   {
     path: "/sin-amistosos",
+    label: "Solo oficiales",
     filters: { excludeAmistosos: true },
     title: "Superclásicos oficiales",
     description:
