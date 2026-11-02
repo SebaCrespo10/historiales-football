@@ -31,7 +31,7 @@ En cambio, se compiló a partir de la tabla partido-por-partido del artículo
 de Wikipedia
 ["Superclásico del fútbol argentino"](https://es.wikipedia.org/wiki/Supercl%C3%A1sico_del_f%C3%BAtbol_argentino),
 validada contra los totales oficiales que el propio artículo reporta por
-competencia. 391 partidos en total, 1908-2026.
+competencia. 392 partidos en total, 1908-2026.
 
 ## Estructura
 

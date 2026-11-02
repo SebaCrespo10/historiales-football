@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { getTotalPartidosLabel } from "@/lib/historial";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -17,30 +18,34 @@ const geistMono = Geist_Mono({
 // solo se carga con el ID seteado (producción); en local no se mide.
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
-const DEFAULT_DESCRIPTION =
-  "Historial completo del Superclásico entre River Plate y Boca Juniors: 391 partidos desde 1908, filtrable por torneo, fase, estadio y resultado.";
+// la cantidad de partidos sale de BigQuery (consulta cacheada), así no hay que
+// editar el texto a mano cada vez que se carga un Superclásico nuevo.
+export async function generateMetadata(): Promise<Metadata> {
+  const partidos = await getTotalPartidosLabel();
+  const description = `Historial completo del Superclásico entre River Plate y Boca Juniors: ${partidos} desde 1908, filtrable por torneo, fase, estadio y resultado.`;
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  title: {
-    default: "Superclásico | Historial River - Boca",
-    template: `%s | ${SITE_NAME}`,
-  },
-  description: DEFAULT_DESCRIPTION,
-  openGraph: {
-    type: "website",
-    locale: "es_AR",
-    siteName: SITE_NAME,
-    title: "Superclásico | Historial River - Boca",
-    description: DEFAULT_DESCRIPTION,
-    url: SITE_URL,
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Superclásico | Historial River - Boca",
-    description: DEFAULT_DESCRIPTION,
-  },
-};
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: "Superclásico | Historial River - Boca",
+      template: `%s | ${SITE_NAME}`,
+    },
+    description,
+    openGraph: {
+      type: "website",
+      locale: "es_AR",
+      siteName: SITE_NAME,
+      title: "Superclásico | Historial River - Boca",
+      description,
+      url: SITE_URL,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Superclásico | Historial River - Boca",
+      description,
+    },
+  };
+}
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
